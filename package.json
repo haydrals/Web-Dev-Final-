@@ -1,0 +1,25 @@
+{
+  "name": "web-dev-final-fork",
+  "version": "1.0.0",
+  "description": "This creates a game for learning a new language",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NickRap005/Web-Dev-Final-Fork.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/NickRap005/Web-Dev-Final-Fork/issues"
+  },
+  "homepage": "https://github.com/NickRap005/Web-Dev-Final-Fork#readme",
+  "dependencies": {
+    "better-sqlite3": "^12.9.0",
+    "express": "^5.2.1"
+  }
+}

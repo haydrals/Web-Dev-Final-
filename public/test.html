@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head><title>My App</title></head>
+<body>
+  <input id="nameInput" placeholder="Enter item name" />
+  <button onclick="addItem()">Add</button>
+  <ul id="itemList"></ul>
+
+  <script>
+    // Fetch items from your Express API
+    async function loadItems() {
+      const res = await fetch('/api/items');
+      const items = await res.json();
+      document.getElementById('itemList').innerHTML =
+        items.map(i => `<li>${i.name}</li>`).join('');
+    }
+
+    // Post a new item
+    async function addItem() {
+      const name = document.getElementById('nameInput').value;
+      await fetch('/api/items', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name })
+      });
+      loadItems();
+    }
+
+    loadItems();
+  </script>
+</body>
+</html>

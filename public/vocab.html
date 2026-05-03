@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Language Vocab Quiz</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f5f0e8;
+      --surface: #fffdf8;
+      --border: #e0d9cc;
+      --border-strong: #c8bfb0;
+      --text: #1a1714;
+      --text-muted: #7a7068;
+      --text-hint: #b0a898;
+      --accent: #2d5a3d;
+      --accent-light: #e8f0eb;
+      --danger: #8b2e2e;
+      --danger-light: #f5e8e8;
+      --success: #2d5a3d;
+      --success-light: #e8f0eb;
+      --radius: 10px;
+      --radius-lg: 16px;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem 4rem;
+    }
+
+    header { text-align: center; margin-bottom: 2.5rem; }
+    header h1 { font-family: 'Fraunces', serif; font-size: 2.4rem; font-weight: 600; letter-spacing: -0.5px; line-height: 1.2; }
+    header p  { color: var(--text-muted); font-size: 15px; margin-top: 6px; }
+
+    /* ── Name screen ── */
+    .name-screen {
+      width: 100%; max-width: 420px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 2.5rem 2rem;
+      display: flex; flex-direction: column; align-items: center;
+      gap: 1.25rem; text-align: center;
+    }
+    .name-screen h2 { font-family: 'Fraunces', serif; font-size: 1.5rem; font-weight: 600; }
+    .name-screen p  { color: var(--text-muted); font-size: 14px; line-height: 1.6; }
+
+    .name-input {
+      width: 100%; padding: 12px 16px;
+      border: 1px solid var(--border); border-radius: var(--radius);
+      background: var(--bg); font-family: 'DM Sans', sans-serif;
+      font-size: 15px; color: var(--text); outline: none; transition: border-color 0.15s;
+    }
+    .name-input:focus { border-color: var(--accent); }
+    .name-input::placeholder { color: var(--text-hint); }
+
+    .name-error { font-size: 13px; color: var(--danger); display: none; }
+
+    /* ── Loading screen ── */
+    .loading-screen {
+      width: 100%; max-width: 420px; text-align: center;
+      padding: 3rem 1rem; display: flex; flex-direction: column;
+      align-items: center; gap: 1rem;
+    }
+    .spinner {
+      width: 32px; height: 32px;
+      border: 3px solid var(--border); border-top-color: var(--accent);
+      border-radius: 50%; animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-screen p { color: var(--text-muted); font-size: 14px; }
+    .loading-screen .retry-btn {
+      margin-top: 8px; padding: 9px 22px; border-radius: 999px;
+      border: 1px solid var(--border-strong); background: var(--surface);
+      cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 14px;
+      color: var(--text); display: none;
+    }
+
+    /* ── Tabs ── */
+    .top-tabs {
+      display: flex; gap: 8px; margin-bottom: 2rem;
+      flex-wrap: wrap; justify-content: center;
+    }
+    .tab-btn {
+      padding: 9px 20px; border-radius: 999px;
+      border: 1px solid var(--border); background: var(--surface);
+      cursor: pointer; font-family: 'DM Sans', sans-serif;
+      font-size: 14px; color: var(--text-muted); transition: all 0.15s;
+    }
+    .tab-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 500; }
+    .tab-btn:hover:not(.active) { border-color: var(--border-strong); color: var(--text); }
+    .tab-btn.leaderboard-tab { border-style: dashed; }
+    .tab-btn.leaderboard-tab.active { border-style: solid; }
+
+    /* ── Quiz ── */
+    .quiz-wrap {
+      width: 100%; max-width: 480px;
+      display: flex; flex-direction: column; align-items: center; gap: 1.25rem;
+    }
+    .score-row { display: flex; gap: 10px; width: 100%; }
+    .score-card { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 10px; text-align: center; }
+    .score-card .s-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-hint); margin-bottom: 4px; }
+    .score-card .s-val { font-family: 'Fraunces', serif; font-size: 24px; font-weight: 600; color: var(--text); }
+
+    .progress { display: flex; align-items: center; gap: 10px; width: 100%; font-size: 12px; color: var(--text-hint); }
+    .prog-bar { flex: 1; height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
+    .prog-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.35s ease; }
+
+    .card {
+      width: 100%; background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 2.5rem 2rem; text-align: center;
+      min-height: 150px; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 8px;
+    }
+    .card .word { font-family: 'Fraunces', serif; font-size: 36px; font-weight: 600; color: var(--text); letter-spacing: -1px; }
+    .card .hint { font-size: 13px; color: var(--text-hint); }
+    .card .translation-reveal { font-size: 18px; color: var(--accent); font-weight: 500; margin-top: 6px; animation: fadeIn 0.25s ease; }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+    .options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
+    .opt {
+      padding: 14px 12px; border-radius: var(--radius);
+      border: 1px solid var(--border); background: var(--surface);
+      cursor: pointer; font-family: 'DM Sans', sans-serif;
+      font-size: 14px; color: var(--text); text-align: center;
+      transition: all 0.15s; line-height: 1.4;
+    }
+    .opt:hover:not(.disabled) { border-color: var(--border-strong); background: #f5f0e8; }
+    .opt.correct { background: var(--success-light); border-color: var(--success); color: var(--success); }
+    .opt.wrong   { background: var(--danger-light);  border-color: var(--danger);  color: var(--danger); }
+    .opt.disabled { cursor: default; }
+
+    .next-btn {
+      display: none; padding: 11px 28px; border-radius: 999px;
+      border: 1px solid var(--accent); background: var(--accent);
+      color: #fff; cursor: pointer; font-family: 'DM Sans', sans-serif;
+      font-size: 14px; font-weight: 500; transition: opacity 0.15s;
+    }
+    .next-btn:hover { opacity: 0.85; }
+
+    /* ── Result ── */
+    .result-screen { text-align: center; padding: 3rem 1rem; width: 100%; max-width: 480px; }
+    .result-screen h2 { font-family: 'Fraunces', serif; font-size: 2rem; font-weight: 600; margin-bottom: 10px; }
+    .result-screen p  { color: var(--text-muted); font-size: 16px; line-height: 1.6; }
+    .perfect { color: var(--accent); font-weight: 500; margin-top: 6px; }
+    .result-actions { display: flex; gap: 10px; justify-content: center; margin-top: 1.5rem; flex-wrap: wrap; }
+
+    .restart-btn, .lb-btn {
+      padding: 11px 28px; border-radius: 999px; cursor: pointer;
+      font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500; transition: opacity 0.15s;
+    }
+    .restart-btn { border: 1px solid var(--accent); background: var(--accent); color: #fff; }
+    .lb-btn { border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); }
+    .restart-btn:hover, .lb-btn:hover { opacity: 0.8; }
+
+    /* ── Leaderboard ── */
+    .lb-wrap { width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 1rem; }
+    .lb-header { display: flex; align-items: center; justify-content: space-between; }
+    .lb-header h2 { font-family: 'Fraunces', serif; font-size: 1.4rem; font-weight: 600; }
+    .lb-player-badge {
+      background: var(--accent-light); border: 1px solid var(--accent);
+      border-radius: var(--radius); padding: 10px 14px;
+      font-size: 13px; color: var(--accent); display: flex; align-items: center; gap: 6px;
+    }
+    .lb-lang-tabs { display: flex; gap: 6px; }
+    .lb-lang-btn {
+      padding: 6px 14px; border-radius: 999px; border: 1px solid var(--border);
+      background: var(--surface); cursor: pointer; font-family: 'DM Sans', sans-serif;
+      font-size: 13px; color: var(--text-muted); transition: all 0.15s;
+    }
+    .lb-lang-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .lb-table { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+    .lb-row {
+      display: grid; grid-template-columns: 36px 1fr 60px 70px;
+      align-items: center; padding: 13px 16px;
+      border-bottom: 1px solid var(--border); gap: 8px; animation: fadeIn 0.2s ease;
+    }
+    .lb-row:last-child { border-bottom: none; }
+    .lb-row.is-me { background: var(--accent-light); }
+    .lb-row.header-row { padding: 8px 16px; background: var(--bg); border-bottom: 1px solid var(--border); }
+    .lb-row.header-row span { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-hint); font-weight: 500; }
+    .rank { font-family: 'Fraunces', serif; font-size: 15px; font-weight: 600; color: var(--text-hint); text-align: center; }
+    .rank.gold   { color: #b8860b; }
+    .rank.silver { color: #888; }
+    .rank.bronze { color: #8b5e3c; }
+    .lb-name { font-size: 14px; font-weight: 500; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .lb-name.is-me::after { content: " (you)"; color: var(--accent); font-weight: 400; font-size: 12px; }
+    .lb-score { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 600; color: var(--text); text-align: right; }
+    .lb-games { font-size: 12px; color: var(--text-hint); text-align: right; }
+    .lb-empty { padding: 2.5rem; text-align: center; color: var(--text-hint); font-size: 14px; }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Vocab Quiz</h1>
+    <p>Pick a language and test your vocabulary</p>
+  </header>
+
+  <!-- Step 1: Name -->
+  <div class="name-screen" id="nameScreen">
+    <h2>Welcome 👋</h2>
+    <p>Enter your name to track your scores on the leaderboard.</p>
+    <input class="name-input" id="nameInput" type="text" placeholder="Your name…" maxlength="24" />
+    <div class="name-error" id="nameError">Please enter a name to continue.</div>
+    <button class="restart-btn" onclick="submitName()">Start Playing →</button>
+  </div>
+
+  <!-- Step 2: Loading words -->
+  <div class="loading-screen hidden" id="loadingScreen">
+    <div class="spinner"></div>
+    <p id="loadingMsg">Fetching words…</p>
+    <button class="retry-btn" id="retryBtn" onclick="loadWords()">Try again</button>
+  </div>
+
+  <!-- Step 3: Main app -->
+  <div id="mainApp" class="hidden" style="width:100%;display:flex;flex-direction:column;align-items:center;">
+    <div class="top-tabs" id="topTabs"></div>
+    <div id="quizArea" class="quiz-wrap"></div>
+    <div id="lbArea" class="lb-wrap hidden"></div>
+  </div>
+
+  <script>
+    const langMeta = {
+      spanish: { flag: '🇪🇸', label: 'Spanish' },
+      french:  { flag: '🇫🇷', label: 'French'  },
+      italian: { flag: '🇮🇹', label: 'Italian' },
+    };
+
+    // Words are fetched per language and cached so switching
+    // tabs doesn't re-fetch until the player finishes a round.
+    const wordCache = {};
+
+    let userId = null, userName = null;
+    let lang = 'spanish';
+    let words = [];  // current word set [{word, translation}]
+    let queue = [], current = 0, score = 0, streak = 0, answered = false;
+    let currentOpts = [];
+    let view = 'quiz';
+    let lbLang = 'spanish';
+
+    // ── Name entry ───────────────────────────────────────────────
+    document.getElementById('nameInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') submitName();
+    });
+
+    async function submitName() {
+      const input = document.getElementById('nameInput');
+      const name = input.value.trim();
+      const err = document.getElementById('nameError');
+      if (!name) { err.style.display = 'block'; return; }
+      err.style.display = 'none';
+
+      try {
+        const res = await fetch('/api/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name })
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        userId = data.id;
+        userName = data.name;
+        document.getElementById('nameScreen').classList.add('hidden');
+        loadWords();
+      } catch (e) {
+        err.textContent = 'Something went wrong. Is the server running?';
+        err.style.display = 'block';
+      }
+    }
+
+    // ── Word fetching ────────────────────────────────────────────
+    async function loadWords() {
+      // Show loading screen
+      document.getElementById('mainApp').classList.add('hidden');
+      document.getElementById('loadingScreen').classList.remove('hidden');
+      document.getElementById('loadingMsg').textContent = `Fetching ${langMeta[lang].label} words…`;
+      document.getElementById('retryBtn').style.display = 'none';
+
+      try {
+        const res = await fetch(`/api/words?language=${lang}`);
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        if (!Array.isArray(data) || data.length < 4) throw new Error('Not enough words returned.');
+
+        wordCache[lang] = data;
+        words = data;
+
+        document.getElementById('loadingScreen').classList.add('hidden');
+        document.getElementById('mainApp').classList.remove('hidden');
+        renderTabs();
+        startQuiz();
+      } catch (e) {
+        document.getElementById('loadingMsg').textContent = '⚠️ ' + (e.message || 'Failed to load words.');
+        document.getElementById('retryBtn').style.display = 'inline-block';
+      }
+    }
+
+    // ── Tabs ─────────────────────────────────────────────────────
+    function renderTabs() {
+      const langBtns = Object.entries(langMeta).map(([key, v]) =>
+        `<button class="tab-btn ${view === 'quiz' && key === lang ? 'active' : ''}" onclick="selectLang('${key}')">${v.flag} ${v.label}</button>`
+      ).join('');
+      const lbBtn = `<button class="tab-btn leaderboard-tab ${view === 'leaderboard' ? 'active' : ''}" onclick="showLeaderboard()">🏆 Leaderboard</button>`;
+      document.getElementById('topTabs').innerHTML = langBtns + lbBtn;
+    }
+
+    async function selectLang(l) {
+      lang = l;
+      view = 'quiz';
+      document.getElementById('lbArea').classList.add('hidden');
+      document.getElementById('quizArea').classList.remove('hidden');
+
+      // Use cache if available, otherwise fetch fresh
+      if (wordCache[l]) {
+        words = wordCache[l];
+        renderTabs();
+        startQuiz();
+      } else {
+        renderTabs();
+        loadWords();
+      }
+    }
+
+    // ── Quiz ─────────────────────────────────────────────────────
+    function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5); }
+
+    function startQuiz() {
+      queue = shuffle(words);
+      current = 0; score = 0; streak = 0; answered = false;
+      render();
+    }
+
+    function render() {
+      const area = document.getElementById('quizArea');
+      if (current >= queue.length) {
+        submitScore();
+        // Clear cache so next "play again" gets fresh words
+        delete wordCache[lang];
+        area.innerHTML = `
+          <div class="result-screen">
+            <h2>Quiz complete!</h2>
+            <p>You scored <strong>${score}</strong> out of <strong>${queue.length}</strong>.</p>
+            ${score === queue.length ? '<p class="perfect">Perfect score! 🎉</p>' : ''}
+            <div class="result-actions">
+              <button class="restart-btn" onclick="loadWords()">Play again</button>
+              <button class="lb-btn" onclick="showLeaderboard()">View leaderboard</button>
+            </div>
+          </div>`;
+        return;
+      }
+
+      const item = queue[current];
+      // Wrong options are other translations from the same word set
+      const wrong = shuffle(words.filter(w => w.word !== item.word)).slice(0, 3);
+      currentOpts = shuffle([item, ...wrong]);
+      const pct = Math.round((current / queue.length) * 100);
+
+      area.innerHTML = `
+        <div class="score-row">
+          <div class="score-card"><div class="s-label">Score</div><div class="s-val">${score}</div></div>
+          <div class="score-card"><div class="s-label">Streak</div><div class="s-val">${streak}</div></div>
+          <div class="score-card"><div class="s-label">Question</div><div class="s-val">${current + 1}/${queue.length}</div></div>
+        </div>
+        <div class="progress">
+          <div class="prog-bar"><div class="prog-fill" style="width:${pct}%"></div></div>
+          <span>${pct}%</span>
+        </div>
+        <div class="card" id="wordCard">
+          <div class="word">${item.word}</div>
+          <div class="hint">What is this in ${langMeta[lang].label}?</div>
+        </div>
+        <div class="options">
+          ${currentOpts.map((o, i) => `<button class="opt" onclick="choose(${i})">${o.translation}</button>`).join('')}
+        </div>
+        <button class="next-btn" id="nextBtn" onclick="next()">Next →</button>
+      `;
+    }
+
+    function choose(idx) {
+      if (answered) return;
+      answered = true;
+      const correct = queue[current];
+      const isRight = currentOpts[idx].word === correct.word;
+      if (isRight) { score++; streak++; } else { streak = 0; }
+
+      document.querySelectorAll('.opt').forEach((el, i) => {
+        el.classList.add('disabled');
+        if (currentOpts[i].word === correct.word) el.classList.add('correct');
+        else if (i === idx && !isRight) el.classList.add('wrong');
+      });
+
+      const rev = document.createElement('div');
+      rev.className = 'translation-reveal';
+      rev.textContent = correct.translation;
+      document.getElementById('wordCard').appendChild(rev);
+      document.getElementById('nextBtn').style.display = 'inline-block';
+    }
+
+    function next() { current++; answered = false; render(); }
+
+    async function submitScore() {
+      try {
+        await fetch('/api/scores', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: userId, points: score, language: lang, total_questions: queue.length })
+        });
+      } catch (e) { console.warn('Could not submit score:', e); }
+    }
+
+    // ── Leaderboard ──────────────────────────────────────────────
+    function showLeaderboard() {
+      view = 'leaderboard';
+      lbLang = lang;
+      document.getElementById('quizArea').classList.add('hidden');
+      document.getElementById('lbArea').classList.remove('hidden');
+      renderTabs();
+      loadLeaderboard();
+    }
+
+    async function loadLeaderboard() {
+      const area = document.getElementById('lbArea');
+      area.innerHTML = `
+        <div class="lb-header">
+          <h2>Leaderboard</h2>
+          <div class="lb-lang-tabs">
+            ${Object.entries(langMeta).map(([key, v]) =>
+              `<button class="lb-lang-btn ${key === lbLang ? 'active' : ''}" onclick="switchLbLang('${key}')">${v.flag}</button>`
+            ).join('')}
+          </div>
+        </div>
+        <div class="lb-player-badge">👤 Playing as <strong>${userName}</strong></div>
+        <div class="lb-table"><div style="padding:2rem;text-align:center;color:var(--text-hint);font-size:14px;">Loading…</div></div>
+      `;
+      try {
+        const res = await fetch(`/api/leaderboard?language=${lbLang}`);
+        renderLbTable(await res.json());
+      } catch {
+        document.querySelector('.lb-table').innerHTML = `<div class="lb-empty">Could not load scores.</div>`;
+      }
+    }
+
+    function renderLbTable(rows) {
+      const table = document.querySelector('.lb-table');
+      if (!rows.length) {
+        table.innerHTML = `<div class="lb-empty">No scores yet for this language.<br>Be the first! 🌟</div>`;
+        return;
+      }
+      const rankSymbol = i => ['<span class="rank gold">🥇</span>','<span class="rank silver">🥈</span>','<span class="rank bronze">🥉</span>'][i] || `<span class="rank">${i+1}</span>`;
+      table.innerHTML = `
+        <div class="lb-row header-row">
+          <span></span><span>Player</span><span style="text-align:right">Best</span><span style="text-align:right">Games</span>
+        </div>
+        ${rows.map((r, i) => {
+          const isMe = r.name === userName;
+          return `<div class="lb-row ${isMe ? 'is-me' : ''}">
+            ${rankSymbol(i)}
+            <div class="lb-name ${isMe ? 'is-me' : ''}">${escHtml(r.name)}</div>
+            <div class="lb-score">${r.best_score}<span style="font-size:12px;color:var(--text-hint);font-family:'DM Sans',sans-serif;font-weight:400">/${r.total_questions}</span></div>
+            <div class="lb-games">${r.games_played} game${r.games_played !== 1 ? 's' : ''}</div>
+          </div>`;
+        }).join('')}
+      `;
+    }
+
+    function switchLbLang(l) { lbLang = l; loadLeaderboard(); }
+    function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  </script>
+</body>
+</html>
