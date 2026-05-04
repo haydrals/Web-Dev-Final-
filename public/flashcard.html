@@ -1,12 +1,244 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flashcards</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Flashcards</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet"/>
+
+  <style>
+    :root {
+      --bg: #f5f0e8;
+      --surface: #fffdf8;
+      --border: #e0d9cc;
+      --text: #1a1714;
+      --text-muted: #7a7068;
+      --accent: #2d5a3d;
+      --radius: 12px;
+    }
+
+    body {
+      margin:0;
+      font-family:'DM Sans', sans-serif;
+      background:var(--bg);
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      min-height:100vh;
+      padding:2rem;
+    }
+
+    h1 {
+      font-family:'Fraunces', serif;
+      margin-bottom:1.5rem;
+    }
+
+    .card {
+      width:320px;
+      height:200px;
+      background:var(--surface);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      cursor:pointer;
+      perspective:1000px;
+      padding:1rem;
+    }
+
+    .inner {
+      position:relative;
+      width:100%;
+      height:100%;
+      transform-style:preserve-3d;
+    }
+
+    .side {
+      position:absolute;
+      width:100%;
+      height:100%;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      backface-visibility:hidden;
+    }
+
+    .back {
+      transform:rotateY(180deg);
+    }
+
+    .word {
+      font-family:'Fraunces', serif;
+      font-size:28px;
+    }
+
+    .hint {
+      font-size:13px;
+      color:var(--text-muted);
+      margin-top:6px;
+    }
+
+    .controls {
+      margin-top:1.5rem;
+      display:flex;
+      gap:10px;
+    }
+
+    button {
+      padding:10px 18px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      background:var(--surface);
+      cursor:pointer;
+      font-family:'DM Sans', sans-serif;
+    }
+
+    button:hover {
+      opacity:0.8;
+    }
+
+    /* YOUR ANIMATION (UNCHANGED) */
+    .flip-vertical-left {
+      -webkit-animation: flip-vertical-left 0.9s cubic-bezier(0.455, 0.030, 0.515, 0.955) both;
+      animation: flip-vertical-left 0.9s cubic-bezier(0.455, 0.030, 0.515, 0.955) both;
+    }
+
+    @-webkit-keyframes flip-vertical-left {
+      0% { transform: rotateY(0); }
+      100% { transform: rotateY(-180deg); }
+    }
+
+    @keyframes flip-vertical-left {
+      0% { transform: rotateY(0); }
+      100% { transform: rotateY(-180deg); }
+    }
+  </style>
 </head>
 <body>
-    
+
+  <h1>Flashcards</h1>
+
+  <div class="card" onclick="flipCard()">
+    <div id="innerCard" class="inner">
+
+      <div class="side front">
+        <div class="word" id="word"></div>
+        <div class="hint">Tap to flip</div>
+      </div>
+
+      <div class="side back">
+        <div class="word" id="translation" style="color:var(--accent);"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="controls">
+    <button onclick="prev()">← Prev</button>
+    <button onclick="next()">Next →</button>
+  </div>
+
+  <script>
+  const wordList = [
+    "hello", "world", "book", "water", "house",
+    "tree", "food", "music", "light", "dream"
+  ];
+
+  let cards = [];
+  let current = 0;
+  let flipped = false;
+  let isLoaded = false;
+
+  async function translate(word, retries = 2) {
+  try {
+    const res = await fetch("https://libretranslate.com/translate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        q: word,
+        source: "en",
+        target: "es",
+        api_key: "" // optional (leave blank if not using one)
+      })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok || data.error) throw new Error(data.error || "Translation failed");
+
+    return data.translatedText;
+
+  } catch (err) {
+    if (retries > 0) {
+      return translate(word, retries - 1);
+    }
+    return "[translation failed]";
+  }
+}
+
+  async function loadWords() {
+  cards = [];
+
+  const translations = await Promise.all(
+    wordList.map(w => translate(w))
+  );
+
+  cards = wordList.map((w, i) => ({
+    word: w,
+    translation: translations[i]
+  }));
+
+  isLoaded = true;
+  render();
+}
+
+ function resetFlip() {
+  const card = document.getElementById("innerCard");
+  card.classList.remove("flip-vertical-left");
+  void card.offsetWidth; // force reflow so animation can restart
+}
+
+function render() {
+  const item = cards[current];
+
+  document.getElementById("word").textContent = item.word;
+  document.getElementById("translation").textContent = item.translation;
+
+  flipped = false;
+  resetFlip();
+}
+
+function flipCard() {
+  const card = document.getElementById("innerCard");
+
+  card.classList.remove("flip-vertical-left");
+  void card.offsetWidth; // restart animation
+  card.classList.add("flip-vertical-left");
+
+  flipped = !flipped;
+}
+
+function next() {
+  if (!isLoaded) return;
+
+  current = (current + 1) % cards.length;
+  render();
+}
+
+function prev() {
+  if (!isLoaded) return;
+
+  current = (current - 1 + cards.length) % cards.length;
+  render();
+}
+
+  loadWords();
+</script>
+
 </body>
 </html>

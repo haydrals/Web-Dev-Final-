@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Typing Translation Game</title>
+
+<style>
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+  }
+
+  h1 {
+    margin-bottom: 10px;
+  }
+
+  .box {
+    background: #1e293b;
+    padding: 20px;
+    border-radius: 12px;
+    width: 340px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  }
+
+  .word {
+    font-size: 24px;
+    margin: 15px 0;
+    color: #38bdf8;
+    font-weight: bold;
+  }
+
+  input {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    border-radius: 8px;
+    border: none;
+    outline: none;
+  }
+
+  button {
+    margin-top: 10px;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    background: #38bdf8;
+    color: #0f172a;
+    font-weight: bold;
+    width: 100%;
+  }
+
+  button:hover {
+    opacity: 0.85;
+  }
+
+  .status {
+    margin-top: 10px;
+    height: 20px;
+  }
+
+  .correct { color: #22c55e; }
+  .wrong { color: #ef4444; }
+</style>
+</head>
+
+<body>
+
+<h1>Translation Typing Game</h1>
+
+<div class="box">
+
+  <div>Score: <span id="score">0</span></div>
+
+  <div class="word" id="word">Press Start</div>
+
+  <input type="text" id="input" placeholder="Type Spanish translation..." disabled />
+
+  <div class="status" id="status"></div>
+
+  <button onclick="startGame()">Start</button>
+  <button onclick="submitAnswer()">Submit</button>
+  <button onclick="nextWord()">Next</button>
+  <button onclick="showAnswer()">Give Up</button>
+
+</div>
+
+<script>
+const words = [
+  "hello","world","apple","water","house",
+  "book","food","music","computer","school",
+  "light","dream","car","tree","coffee"
+];
+
+let currentWord = "";
+let currentTranslation = "";
+let score = 0;
+let gameRunning = false;
+
+const wordEl = document.getElementById("word");
+const inputEl = document.getElementById("input");
+const scoreEl = document.getElementById("score");
+const statusEl = document.getElementById("status");
+
+async function translate(word) {
+  try {
+    const res = await fetch("https://translate.argosopentech.com/translate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        q: word,
+        source: "en",
+        target: "es",
+        format: "text"
+      })
+    });
+
+    if (!res.ok) {
+      console.error("HTTP Error:", res.status);
+      return "(translation error)";
+    }
+
+    const data = await res.json();
+
+    return data.translatedText || "(no translation)";
+  } catch (err) {
+    console.error("Translation failed:", err);
+    return "(translation failed)";
+  }
+}
+
+async function loadNewWord() {
+  currentWord = words[Math.floor(Math.random() * words.length)];
+  wordEl.textContent = currentWord;
+
+  currentTranslation = await translate(currentWord);
+}
+
+function startGame() {
+  if (gameRunning) return;
+
+  gameRunning = true;
+  score = 0;
+
+  scoreEl.textContent = score;
+
+  inputEl.disabled = false;
+  inputEl.value = "";
+  inputEl.focus();
+
+  loadNewWord();
+}
+
+function submitAnswer() {
+  if (!gameRunning) return;
+
+  const answer = inputEl.value.trim().toLowerCase();
+  const correct = currentTranslation?.toLowerCase();
+
+  if (answer === correct && correct) {
+    score++;
+    scoreEl.textContent = score;
+
+    statusEl.textContent = "Correct!";
+    statusEl.className = "status correct";
+
+    inputEl.value = "";
+    loadNewWord();
+  } else {
+    statusEl.textContent = `Wrong! Answer: ${currentTranslation}`;
+    statusEl.className = "status wrong";
+  }
+
+  inputEl.focus();
+}
+
+function nextWord() {
+  if (!gameRunning) return;
+
+  inputEl.value = "";
+  statusEl.textContent = "";
+
+  loadNewWord();
+  inputEl.focus();
+}
+
+function showAnswer() {
+  if (!gameRunning) return;
+
+  statusEl.textContent = currentTranslation
+    ? `Answer: ${currentTranslation}`
+    : "Translation loading...";
+
+  statusEl.className = "status wrong";
+
+  inputEl.disabled = true;
+
+  score = Math.max(0, score - 1);
+  scoreEl.textContent = score;
+
+  setTimeout(() => {
+    inputEl.disabled = false;
+    inputEl.value = "";
+    statusEl.textContent = "";
+    loadNewWord();
+    inputEl.focus();
+  }, 2000);
+}
+</script>
+
+</body>
+</html>
