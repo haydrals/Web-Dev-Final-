@@ -144,101 +144,73 @@
   </div>
 
   <script>
-  const wordList = [
-    "hello", "world", "book", "water", "house",
-    "tree", "food", "music", "light", "dream"
-  ];
+  // ✅ Local dictionary — replaces broken libretranslate.com API
+  const dictionary = {
+    "hello":    "hola",
+    "world":    "mundo",
+    "book":     "libro",
+    "water":    "agua",
+    "house":    "casa",
+    "tree":     "árbol",
+    "food":     "comida",
+    "music":    "música",
+    "light":    "luz",
+    "dream":    "sueño"
+  };
+
+  const wordList = Object.keys(dictionary);
 
   let cards = [];
   let current = 0;
   let flipped = false;
-  let isLoaded = false;
 
-  async function translate(word, retries = 2) {
-  try {
-    const res = await fetch("https://libretranslate.com/translate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        q: word,
-        source: "en",
-        target: "es",
-        api_key: "" // optional (leave blank if not using one)
-      })
-    });
+  function loadWords() {
+    cards = wordList.map(w => ({
+      word: w,
+      translation: dictionary[w]
+    }));
 
-    const data = await res.json();
-
-    if (!res.ok || data.error) throw new Error(data.error || "Translation failed");
-
-    return data.translatedText;
-
-  } catch (err) {
-    if (retries > 0) {
-      return translate(word, retries - 1);
-    }
-    return "[translation failed]";
+    render();
   }
-}
 
-  async function loadWords() {
-  cards = [];
+  function resetFlip() {
+    const card = document.getElementById("innerCard");
+    card.classList.remove("flip-vertical-left");
+    void card.offsetWidth; // force reflow so animation can restart
+  }
 
-  const translations = await Promise.all(
-    wordList.map(w => translate(w))
-  );
+  function render() {
+    const item = cards[current];
 
-  cards = wordList.map((w, i) => ({
-    word: w,
-    translation: translations[i]
-  }));
+    document.getElementById("word").textContent = item.word;
+    document.getElementById("translation").textContent = item.translation;
 
-  isLoaded = true;
-  render();
-}
+    flipped = false;
+    resetFlip();
+  }
 
- function resetFlip() {
-  const card = document.getElementById("innerCard");
-  card.classList.remove("flip-vertical-left");
-  void card.offsetWidth; // force reflow so animation can restart
-}
+  function flipCard() {
+    const card = document.getElementById("innerCard");
 
-function render() {
-  const item = cards[current];
+    card.classList.remove("flip-vertical-left");
+    void card.offsetWidth;
+    card.classList.add("flip-vertical-left");
 
-  document.getElementById("word").textContent = item.word;
-  document.getElementById("translation").textContent = item.translation;
+    flipped = !flipped;
+  }
 
-  flipped = false;
-  resetFlip();
-}
+  function next() {
+    current = (current + 1) % cards.length;
+    render();
+  }
 
-function flipCard() {
-  const card = document.getElementById("innerCard");
-
-  card.classList.remove("flip-vertical-left");
-  void card.offsetWidth; // restart animation
-  card.classList.add("flip-vertical-left");
-
-  flipped = !flipped;
-}
-
-function next() {
-  if (!isLoaded) return;
-
-  current = (current + 1) % cards.length;
-  render();
-}
-
-function prev() {
-  if (!isLoaded) return;
-
-  current = (current - 1 + cards.length) % cards.length;
-  render();
-}
+  function prev() {
+    current = (current - 1 + cards.length) % cards.length;
+    render();
+  }
 
   loadWords();
-</script>
+  </script>
 
 </body>
 </html>
