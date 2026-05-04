@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Listening Test</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f5f0e8;
+      --surface: #fffdf8;
+      --border: #e0d9cc;
+      --border-strong: #c8bfb0;
+      --text: #1a1714;
+      --text-muted: #7a7068;
+      --text-hint: #b0a898;
+      --accent: #2d5a3d;
+      --accent-light: #e8f0eb;
+      --danger: #8b2e2e;
+      --danger-light: #f5e8e8;
+      --success: #2d5a3d;
+      --success-light: #e8f0eb;
+      --radius: 10px;
+      --radius-lg: 16px;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem 4rem;
+    }
+
+    header { text-align: center; margin-bottom: 2.5rem; }
+    header h1 { font-family: 'Fraunces', serif; font-size: 2.4rem; font-weight: 600; letter-spacing: -0.5px; line-height: 1.2; }
+    header p  { color: var(--text-muted); font-size: 15px; margin-top: 6px; }
+    header .back-link {
+      display: inline-block; margin-top: 10px;
+      font-size: 13px; color: var(--text-hint); text-decoration: none;
+      transition: color 0.15s;
+    }
+    header .back-link:hover { color: var(--accent); }
+
+    /* ── Panel (name + loading) ── */
+    .panel {
+      width: 100%; max-width: 420px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 2.5rem 2rem;
+      display: flex; flex-direction: column; align-items: center;
+      gap: 1.25rem; text-align: center;
+    }
+    .panel h2 { font-family: 'Fraunces', serif; font-size: 1.5rem; font-weight: 600; }
+    .panel p  { color: var(--text-muted); font-size: 14px; line-height: 1.6; }
+
+    .name-input {
+      width: 100%; padding: 12px 16px;
+      border: 1px solid var(--border); border-radius: var(--radius);
+      background: var(--bg); font-family: 'DM Sans', sans-serif;
+      font-size: 15px; color: var(--text); outline: none; transition: border-color 0.15s;
+    }
+    .name-input:focus { border-color: var(--accent); }
+    .name-input::placeholder { color: var(--text-hint); }
+    .field-error { font-size: 13px; color: var(--danger); display: none; align-self: flex-start; }
+
+    /* ── Lang selector ── */
+    .lang-grid { display: flex; gap: 8px; width: 100%; }
+    .lang-btn {
+      flex: 1; padding: 11px 8px; border-radius: var(--radius);
+      border: 1px solid var(--border); background: var(--bg);
+      cursor: pointer; font-family: 'DM Sans', sans-serif;
+      font-size: 13px; color: var(--text-muted);
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      transition: all 0.15s;
+    }
+    .lang-btn .lang-flag { font-size: 20px; }
+    .lang-btn:hover { border-color: var(--border-strong); color: var(--text); }
+    .lang-btn.selected { border-color: var(--accent); background: var(--accent-light); color: var(--accent); font-weight: 500; }
+
+    /* ── Buttons ── */
+    .btn-primary {
+      padding: 11px 28px; border-radius: 999px;
+      border: 1px solid var(--accent); background: var(--accent);
+      color: #fff; cursor: pointer; font-family: 'DM Sans', sans-serif;
+      font-size: 14px; font-weight: 500; transition: opacity 0.15s; width: 100%;
+    }
+    .btn-primary:hover { opacity: 0.85; }
+    .btn-secondary {
+      padding: 11px 28px; border-radius: 999px;
+      border: 1px solid var(--border-strong); background: var(--surface);
+      color: var(--text); cursor: pointer; font-family: 'DM Sans', sans-serif;
+      font-size: 14px; transition: opacity 0.15s;
+    }
+    .btn-secondary:hover { opacity: 0.7; }
+
+    /* ── Loading ── */
+    .loading-wrap {
+      width: 100%; max-width: 420px; text-align: center;
+      padding: 3rem 1rem; display: flex; flex-direction: column;
+      align-items: center; gap: 1rem;
+    }
+    .spinner {
+      width: 32px; height: 32px;
+      border: 3px solid var(--border); border-top-color: var(--accent);
+      border-radius: 50%; animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-wrap p { color: var(--text-muted); font-size: 14px; }
+
+    /* ── Tabs ── */
+    .top-tabs {
+      display: flex; gap: 8px; margin-bottom: 2rem;
+      flex-wrap: wrap; justify-content: center;
+    }
+    .tab-btn {
+      padding: 9px 20px; border-radius: 999px;
+      border: 1px solid var(--border); background: var(--surface);
+      cursor: pointer; font-family: 'DM Sans', sans-serif;
+      font-size: 14px; color: var(--text-muted); transition: all 0.15s;
+    }
+    .tab-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 500; }
+    .tab-btn:hover:not(.active) { border-color: var(--border-strong); color: var(--text); }
+    .tab-btn.leaderboard-tab { border-style: dashed; }
+    .tab-btn.leaderboard-tab.active { border-style: solid; }
+
+    /* ── Quiz ── */
+    .quiz-wrap {
+      width: 100%; max-width: 480px;
+      display: flex; flex-direction: column; align-items: center; gap: 1.25rem;
+    }
+
+    .score-row { display: flex; gap: 10px; width: 100%; }
+    .score-card { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 10px; text-align: center; }
+    .score-card .s-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-hint); margin-bottom: 4px; }
+    .score-card .s-val { font-family: 'Fraunces', serif; font-size: 24px; font-weight: 600; color: var(--text); }
+
+    .progress { display: flex; align-items: center; gap: 10px; width: 100%; font-size: 12px; color: var(--text-hint); }
+    .prog-bar { flex: 1; height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
+    .prog-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.35s ease; }
+
+    /* ── Listen card ── */
+    .listen-card {
+      width: 100%; background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 2.5rem 2rem; text-align: center;
+      display: flex; flex-direction: column; align-items: center; gap: 1.25rem;
+    }
+
+    .listen-card .instruction {
+      font-size: 13px; color: var(--text-hint);
+    }
+
+    .play-btn {
+      width: 72px; height: 72px; border-radius: 50%;
+      border: 2px solid var(--accent); background: var(--accent-light);
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s; position: relative;
+    }
+    .play-btn:hover { background: var(--accent); }
+    .play-btn:hover .play-icon { color: #fff; }
+    .play-btn.playing { background: var(--accent); animation: pulse 1s ease-in-out infinite; }
+    .play-btn.playing .play-icon { color: #fff; }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(45,90,61,0.3); }
+      50% { box-shadow: 0 0 0 10px rgba(45,90,61,0); }
+    }
+
+    .play-icon { font-size: 28px; color: var(--accent); line-height: 1; }
+
+    .replay-hint { font-size: 12px; color: var(--text-hint); }
+
+    .word-reveal {
+      font-family: 'Fraunces', serif; font-size: 28px; font-weight: 600;
+      color: var(--accent); animation: fadeIn 0.25s ease; display: none;
+    }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+    /* ── Options ── */
+    .options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
+    .opt {
+      padding: 14px 12px; border-radius: var(--radius);
+      border: 1px solid var(--border); background: var(--surface);
+      cursor: pointer; font-family: 'DM Sans', sans-serif;
+      font-size: 14px; color: var(--text); text-align: center;
+      transition: all 0.15s; line-height: 1.4;
+    }
+    .opt:hover:not(.disabled) { border-color: var(--border-strong); background: var(--bg); }
+    .opt.correct { background: var(--success-light); border-color: var(--success); color: var(--success); }
+    .opt.wrong   { background: var(--danger-light);  border-color: var(--danger);  color: var(--danger); }
+    .opt.disabled { cursor: default; }
+
+    .next-btn {
+      display: none; padding: 11px 28px; border-radius: 999px;
+      border: 1px solid var(--accent); background: var(--accent);
+      color: #fff; cursor: pointer; font-family: 'DM Sans', sans-serif;
+      font-size: 14px; font-weight: 500; transition: opacity 0.15s;
+    }
+    .next-btn:hover { opacity: 0.85; }
+
+    /* ── Result ── */
+    .result-screen { text-align: center; padding: 3rem 1rem; width: 100%; max-width: 480px; }
+    .result-screen h2 { font-family: 'Fraunces', serif; font-size: 2rem; font-weight: 600; margin-bottom: 10px; }
+    .result-screen p  { color: var(--text-muted); font-size: 16px; line-height: 1.6; }
+    .perfect { color: var(--accent); font-weight: 500; margin-top: 6px; }
+    .result-actions { display: flex; gap: 10px; justify-content: center; margin-top: 1.5rem; flex-wrap: wrap; }
+
+    /* ── Leaderboard ── */
+    .lb-wrap { width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 1rem; }
+    .lb-header { display: flex; align-items: center; justify-content: space-between; }
+    .lb-header h2 { font-family: 'Fraunces', serif; font-size: 1.4rem; font-weight: 600; }
+    .lb-player-badge {
+      background: var(--accent-light); border: 1px solid var(--accent);
+      border-radius: var(--radius); padding: 10px 14px;
+      font-size: 13px; color: var(--accent); display: flex; align-items: center; gap: 6px;
+    }
+    .lb-lang-tabs { display: flex; gap: 6px; }
+    .lb-lang-btn {
+      padding: 6px 14px; border-radius: 999px; border: 1px solid var(--border);
+      background: var(--surface); cursor: pointer; font-family: 'DM Sans', sans-serif;
+      font-size: 13px; color: var(--text-muted); transition: all 0.15s;
+    }
+    .lb-lang-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .lb-table { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+    .lb-row {
+      display: grid; grid-template-columns: 36px 1fr 60px 70px;
+      align-items: center; padding: 13px 16px;
+      border-bottom: 1px solid var(--border); gap: 8px; animation: fadeIn 0.2s ease;
+    }
+    .lb-row:last-child { border-bottom: none; }
+    .lb-row.is-me { background: var(--accent-light); }
+    .lb-row.header-row { padding: 8px 16px; background: var(--bg); border-bottom: 1px solid var(--border); }
+    .lb-row.header-row span { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-hint); font-weight: 500; }
+    .rank { font-family: 'Fraunces', serif; font-size: 15px; font-weight: 600; color: var(--text-hint); text-align: center; }
+    .rank.gold   { color: #b8860b; }
+    .rank.silver { color: #888; }
+    .rank.bronze { color: #8b5e3c; }
+    .lb-name { font-size: 14px; font-weight: 500; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .lb-name.is-me::after { content: " (you)"; color: var(--accent); font-weight: 400; font-size: 12px; }
+    .lb-score { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 600; color: var(--text); text-align: right; }
+    .lb-games { font-size: 12px; color: var(--text-hint); text-align: right; }
+    .lb-empty { padding: 2.5rem; text-align: center; color: var(--text-hint); font-size: 14px; }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Listening Test</h1>
+    <p>Hear the word, pick the meaning</p>
+    <a class="back-link" href="index.html">← Home</a>
+  </header>
+
+  <!-- Step 1: Name + language -->
+  <div class="panel" id="nameScreen">
+    <h2>Welcome 👋</h2>
+    <p>Enter your name and pick a language to get started.</p>
+    <input class="name-input" id="nameInput" type="text" placeholder="Your name…" maxlength="24" />
+    <div class="field-error" id="nameError">Please enter a name to continue.</div>
+    <div style="width:100%;text-align:left;">
+      <div style="font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-hint);margin-bottom:8px;">Language</div>
+      <div class="lang-grid">
+        <button class="lang-btn" data-lang="spanish" onclick="selectLang(this)"><span class="lang-flag">🇪🇸</span>Spanish</button>
+        <button class="lang-btn" data-lang="french"  onclick="selectLang(this)"><span class="lang-flag">🇫🇷</span>French</button>
+        <button class="lang-btn" data-lang="italian" onclick="selectLang(this)"><span class="lang-flag">🇮🇹</span>Italian</button>
+      </div>
+    </div>
+    <div class="field-error" id="langError">Please select a language.</div>
+    <button class="btn-primary" onclick="submitName()">Start Listening →</button>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-wrap hidden" id="loadingScreen">
+    <div class="spinner"></div>
+    <p id="loadingMsg">Fetching words…</p>
+    <button class="btn-secondary" id="retryBtn" style="display:none" onclick="loadWords()">Try again</button>
+  </div>
+
+  <!-- Main app -->
+  <div id="mainApp" class="hidden" style="width:100%;display:flex;flex-direction:column;align-items:center;">
+    <div class="top-tabs" id="topTabs"></div>
+    <div id="quizArea" class="quiz-wrap"></div>
+    <div id="lbArea" class="lb-wrap hidden"></div>
+  </div>
+
+  <script>
+    const langMeta = {
+      spanish: { flag: '🇪🇸', label: 'Spanish', ttsLang: 'es-ES' },
+      french:  { flag: '🇫🇷', label: 'French',  ttsLang: 'fr-FR' },
+      italian: { flag: '🇮🇹', label: 'Italian', ttsLang: 'it-IT' },
+    };
+
+    let userId = null, userName = null, selectedLang = null;
+    let words = [], queue = [], current = 0, score = 0, streak = 0, answered = false;
+    let currentOpts = [];
+    let view = 'quiz', lbLang = 'spanish';
+
+    // ── Language picker ──────────────────────────────────────────
+    function selectLang(btn) {
+      document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedLang = btn.dataset.lang;
+    }
+
+    // ── Name entry ───────────────────────────────────────────────
+    document.getElementById('nameInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') submitName();
+    });
+
+    async function submitName() {
+      const name = document.getElementById('nameInput').value.trim();
+      const nameErr = document.getElementById('nameError');
+      const langErr = document.getElementById('langError');
+
+      nameErr.style.display = 'none';
+      langErr.style.display = 'none';
+
+      if (!name) { nameErr.style.display = 'block'; return; }
+      if (!selectedLang) { langErr.style.display = 'block'; return; }
+
+      try {
+        const res = await fetch('/api/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name })
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        userId = data.id;
+        userName = data.name;
+        document.getElementById('nameScreen').classList.add('hidden');
+        loadWords();
+      } catch (e) {
+        nameErr.textContent = 'Something went wrong. Is the server running?';
+        nameErr.style.display = 'block';
+      }
+    }
+
+    // ── Word fetching ────────────────────────────────────────────
+    async function loadWords() {
+      document.getElementById('mainApp').classList.add('hidden');
+      document.getElementById('loadingScreen').classList.remove('hidden');
+      document.getElementById('loadingMsg').textContent = `Fetching ${langMeta[selectedLang].label} words…`;
+      document.getElementById('retryBtn').style.display = 'none';
+
+      try {
+        const res = await fetch(`/api/words?language=${selectedLang}`);
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        if (!Array.isArray(data) || data.length < 4) throw new Error('Not enough words returned.');
+        words = data;
+        document.getElementById('loadingScreen').classList.add('hidden');
+        document.getElementById('mainApp').classList.remove('hidden');
+        lbLang = selectedLang;
+        renderTabs();
+        startQuiz();
+      } catch (e) {
+        document.getElementById('loadingMsg').textContent = '⚠️ ' + (e.message || 'Failed to load words.');
+        document.getElementById('retryBtn').style.display = 'inline-block';
+      }
+    }
+
+    // ── TTS ──────────────────────────────────────────────────────
+    function speak(text, onEnd) {
+      window.speechSynthesis.cancel();
+      const utt = new SpeechSynthesisUtterance(text);
+      utt.lang = langMeta[selectedLang].ttsLang;
+      utt.rate = 0.85; // slightly slower so it's easier to hear
+      if (onEnd) utt.onend = onEnd;
+      window.speechSynthesis.speak(utt);
+    }
+
+    // ── Tabs ─────────────────────────────────────────────────────
+    function renderTabs() {
+      const langBtn = `<button class="tab-btn ${view === 'quiz' ? 'active' : ''}" onclick="backToQuiz()">${langMeta[selectedLang].flag} ${langMeta[selectedLang].label}</button>`;
+      const lbBtn  = `<button class="tab-btn leaderboard-tab ${view === 'leaderboard' ? 'active' : ''}" onclick="showLeaderboard()">🏆 Leaderboard</button>`;
+      document.getElementById('topTabs').innerHTML = langBtn + lbBtn;
+    }
+
+    function backToQuiz() {
+      view = 'quiz';
+      document.getElementById('lbArea').classList.add('hidden');
+      document.getElementById('quizArea').classList.remove('hidden');
+      renderTabs();
+    }
+
+    // ── Quiz ─────────────────────────────────────────────────────
+    function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5); }
+
+    function startQuiz() {
+      queue = shuffle(words);
+      current = 0; score = 0; streak = 0; answered = false;
+      view = 'quiz';
+      document.getElementById('quizArea').classList.remove('hidden');
+      document.getElementById('lbArea').classList.add('hidden');
+      renderTabs();
+      render();
+    }
+
+    function render() {
+      const area = document.getElementById('quizArea');
+
+      if (current >= queue.length) {
+        submitScore();
+        window.speechSynthesis.cancel();
+        area.innerHTML = `
+          <div class="result-screen">
+            <h2>Test complete!</h2>
+            <p>You scored <strong>${score}</strong> out of <strong>${queue.length}</strong>.</p>
+            ${score === queue.length ? '<p class="perfect">Perfect score! 🎉</p>' : ''}
+            <div class="result-actions">
+              <button class="btn-primary" style="width:auto" onclick="loadWords()">Play again</button>
+              <button class="btn-secondary" onclick="showLeaderboard()">Leaderboard</button>
+            </div>
+          </div>`;
+        return;
+      }
+
+      const item = queue[current];
+      // Options are English meanings — correct + 3 wrong
+      const wrong = shuffle(words.filter(w => w.word !== item.word)).slice(0, 3);
+      currentOpts = shuffle([item, ...wrong]);
+      const pct = Math.round((current / queue.length) * 100);
+
+      area.innerHTML = `
+        <div class="score-row">
+          <div class="score-card"><div class="s-label">Score</div><div class="s-val">${score}</div></div>
+          <div class="score-card"><div class="s-label">Streak</div><div class="s-val">${streak}</div></div>
+          <div class="score-card"><div class="s-label">Question</div><div class="s-val">${current + 1}/${queue.length}</div></div>
+        </div>
+        <div class="progress">
+          <div class="prog-bar"><div class="prog-fill" style="width:${pct}%"></div></div>
+          <span>${pct}%</span>
+        </div>
+        <div class="listen-card">
+          <div class="instruction">Listen to the word, then pick the English meaning</div>
+          <button class="play-btn" id="playBtn" onclick="playWord()">
+            <span class="play-icon">🔊</span>
+          </button>
+          <div class="replay-hint">Tap to hear again</div>
+          <div class="word-reveal" id="wordReveal">${item.translation}</div>
+        </div>
+        <div class="options">
+          ${currentOpts.map((o, i) => `<button class="opt" onclick="choose(${i})">${o.word}</button>`).join('')}
+        </div>
+        <button class="next-btn" id="nextBtn" onclick="next()">Next →</button>
+      `;
+
+      // Auto-play on load
+      playWord();
+    }
+
+    function playWord() {
+      const btn = document.getElementById('playBtn');
+      if (btn) {
+        btn.classList.add('playing');
+        speak(queue[current].translation, () => btn.classList.remove('playing'));
+      }
+    }
+
+    function choose(idx) {
+      if (answered) return;
+      answered = true;
+
+      const correct = queue[current];
+      const isRight = currentOpts[idx].word === correct.word;
+      if (isRight) { score++; streak++; } else { streak = 0; }
+
+      // Reveal the written word
+      const reveal = document.getElementById('wordReveal');
+      if (reveal) reveal.style.display = 'block';
+
+      document.querySelectorAll('.opt').forEach((el, i) => {
+        el.classList.add('disabled');
+        if (currentOpts[i].word === correct.word) el.classList.add('correct');
+        else if (i === idx && !isRight) el.classList.add('wrong');
+      });
+
+      document.getElementById('nextBtn').style.display = 'inline-block';
+    }
+
+    function next() { current++; answered = false; render(); }
+
+    async function submitScore() {
+      try {
+        await fetch('/api/scores', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: userId, points: score, language: selectedLang, total_questions: queue.length })
+        });
+      } catch (e) { console.warn('Could not submit score:', e); }
+    }
+
+    // ── Leaderboard ──────────────────────────────────────────────
+    function showLeaderboard() {
+      view = 'leaderboard';
+      document.getElementById('quizArea').classList.add('hidden');
+      document.getElementById('lbArea').classList.remove('hidden');
+      renderTabs();
+      loadLeaderboard();
+    }
+
+    async function loadLeaderboard() {
+      document.getElementById('lbArea').innerHTML = `
+        <div class="lb-header">
+          <h2>Leaderboard</h2>
+          <div class="lb-lang-tabs">
+            ${Object.entries(langMeta).map(([key, v]) =>
+              `<button class="lb-lang-btn ${key === lbLang ? 'active' : ''}" onclick="switchLbLang('${key}')">${v.flag}</button>`
+            ).join('')}
+          </div>
+        </div>
+        <div class="lb-player-badge">👤 Playing as <strong>${userName}</strong></div>
+        <div class="lb-table"><div style="padding:2rem;text-align:center;color:var(--text-hint);font-size:14px;">Loading…</div></div>
+      `;
+      try {
+        const res = await fetch(`/api/leaderboard?language=${lbLang}`);
+        renderLbTable(await res.json());
+      } catch {
+        document.querySelector('.lb-table').innerHTML = `<div class="lb-empty">Could not load scores.</div>`;
+      }
+    }
+
+    function renderLbTable(rows) {
+      const table = document.querySelector('.lb-table');
+      if (!rows.length) {
+        table.innerHTML = `<div class="lb-empty">No scores yet.<br>Be the first! 🌟</div>`;
+        return;
+      }
+      const rankSymbol = i => ['<span class="rank gold">🥇</span>','<span class="rank silver">🥈</span>','<span class="rank bronze">🥉</span>'][i] || `<span class="rank">${i+1}</span>`;
+      table.innerHTML = `
+        <div class="lb-row header-row">
+          <span></span><span>Player</span><span style="text-align:right">Best</span><span style="text-align:right">Games</span>
+        </div>
+        ${rows.map((r, i) => {
+          const isMe = r.name === userName;
+          return `<div class="lb-row ${isMe ? 'is-me' : ''}">
+            ${rankSymbol(i)}
+            <div class="lb-name ${isMe ? 'is-me' : ''}">${escHtml(r.name)}</div>
+            <div class="lb-score">${r.best_score}<span style="font-size:12px;color:var(--text-hint);font-family:'DM Sans',sans-serif;font-weight:400">/${r.total_questions}</span></div>
+            <div class="lb-games">${r.games_played} game${r.games_played !== 1 ? 's' : ''}</div>
+          </div>`;
+        }).join('')}
+      `;
+    }
+
+    function switchLbLang(l) { lbLang = l; loadLeaderboard(); }
+    function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  </script>
+</body>
+</html>
