@@ -144,30 +144,39 @@
   </div>
 
   <script>
-  // ✅ Local dictionary — replaces broken libretranslate.com API
-  const dictionary = {
-    "hello":    "hola",
-    "world":    "mundo",
-    "book":     "libro",
-    "water":    "agua",
-    "house":    "casa",
-    "tree":     "árbol",
-    "food":     "comida",
-    "music":    "música",
-    "light":    "luz",
-    "dream":    "sueño"
-  };
-
-  const wordList = Object.keys(dictionary);
+  const wordList = [
+    "hello", "fork", "book", "water", "harbor",
+    "tree", "food", "music", "light", "dream"
+  ];
 
   let cards = [];
   let current = 0;
   let flipped = false;
 
-  function loadWords() {
-    cards = wordList.map(w => ({
+  // ✅ MyMemory API — free, no key required
+  async function translate(word) {
+    try {
+      const res = await fetch(
+        `https://api.mymemory.translated.net/get?q=${encodeURIComponent(word)}&langpair=en|es`
+      );
+      const data = await res.json();
+      return data.responseData?.translatedText || "(no translation)";
+    } catch (err) {
+      console.error("Translation failed:", err);
+      return "(translation failed)";
+    }
+  }
+
+  async function loadWords() {
+    cards = [];
+    document.getElementById("word").textContent = "Loading...";
+    document.getElementById("translation").textContent = "...";
+
+    const translations = await Promise.all(wordList.map(w => translate(w)));
+
+    cards = wordList.map((w, i) => ({
       word: w,
-      translation: dictionary[w]
+      translation: translations[i]
     }));
 
     render();
